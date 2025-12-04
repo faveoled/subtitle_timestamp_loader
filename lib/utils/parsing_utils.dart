@@ -62,4 +62,40 @@ class ParsingUtils {
     }
     return 'No subtitle found for the given timestamp.';
   }
+
+  static int getCharacterIndexForDuration(
+      String srtContent, Duration timestamp) {
+    final lines = srtContent.split('\n');
+    final dateFormat = DateFormat("HH:mm:ss,SSS");
+    int characterIndex = 0;
+
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].contains('-->')) {
+        final timeParts = lines[i].split(' --> ');
+        final startTime = dateFormat.parse(timeParts[0].trim(), true);
+        final endTime = dateFormat.parse(timeParts[1].trim(), true);
+        final subtitleDuration = Duration(
+          hours: startTime.hour,
+          minutes: startTime.minute,
+          seconds: startTime.second,
+          milliseconds: startTime.millisecond,
+        );
+
+        final subtitleEndDuration = Duration(
+          hours: endTime.hour,
+          minutes: endTime.minute,
+          seconds: endTime.second,
+          milliseconds: endTime.millisecond,
+        );
+
+        if (timestamp >= subtitleDuration && timestamp <= subtitleEndDuration) {
+          if (i + 1 < lines.length) {
+            return characterIndex + lines[i].length + 1;
+          }
+        }
+      }
+      characterIndex += lines[i].length + 1;
+    }
+    return -1;
+  }
 }

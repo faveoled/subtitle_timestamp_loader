@@ -23,6 +23,7 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
   String _fullSubtitleContent = '';
   bool _isLoading = true;
   final OpenSubtitlesApi _api = OpenSubtitlesApi();
+  final TextEditingController _textController = TextEditingController();
 
   @override
   void initState() {
@@ -30,20 +31,37 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
     _loadSubtitleContent();
   }
 
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSubtitleContent() async {
     try {
       final fileId = widget.subtitle['files'][0]['file_id'];
       _fullSubtitleContent = await _api.downloadSubtitle(fileId);
       setState(() {
-        final duration = ParsingUtils.parseTimestamp(widget.timestamp);
-        _subtitleContent = ParsingUtils.parseSrt(_fullSubtitleContent, duration);
+        _textController.text = _fullSubtitleContent;
         _isLoading = false;
       });
+      _scrollToTimestamp(_fullSubtitleContent);
     } catch (e) {
       setState(() {
-        _subtitleContent = 'Error: $e';
+        _textController.text = 'Error: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  void _scrollToTimestamp(String content) {
+    final duration = ParsingUtils.parseTimestamp(widget.timestamp);
+    final characterIndex =
+        ParsingUtils.getCharacterIndexForDuration(content, duration);
+    if (characterIndex != -1) {
+      _textController.selection = TextSelection.fromPosition(
+        TextPosition(offset: characterIndex),
+      );
     }
   }
 
@@ -80,7 +98,11 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(_subtitleContent),
+              child: TextField(
+                controller: _textController,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+              ),
             ),
     );
   }
