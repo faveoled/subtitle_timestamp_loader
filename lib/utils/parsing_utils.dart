@@ -88,6 +88,34 @@ class ParsingUtils {
           milliseconds: endTime.millisecond,
         );
 
+        if (subtitleDuration >= timestamp) {
+          int prevTimestampLineIndex = -1;
+          for (int j = i - 1; j >= 0; j--) {
+            if (lines[j].contains('-->')) {
+              prevTimestampLineIndex = j;
+              break;
+            }
+          }
+
+          if (prevTimestampLineIndex != -1) {
+            final prevTimeParts =
+                lines[prevTimestampLineIndex].split(' --> ');
+            final prevEndTime =
+                dateFormat.parse(prevTimeParts[1].trim(), true);
+            final prevSubtitleEndDuration = Duration(
+              hours: prevEndTime.hour,
+              minutes: prevEndTime.minute,
+              seconds: prevEndTime.second,
+              milliseconds: prevEndTime.millisecond,
+            );
+            if (timestamp > prevSubtitleEndDuration) {
+              return characterIndex;
+            }
+          } else {
+            return characterIndex;
+          }
+        }
+
         if (timestamp >= subtitleDuration && timestamp <= subtitleEndDuration) {
           if (i + 1 < lines.length) {
             return characterIndex + lines[i].length + 1;
