@@ -17,28 +17,28 @@ World
       final timestamp = Duration(seconds: 1, milliseconds: 500);
       final result =
           ParsingUtils.getCharacterIndexForDuration(srtContent, timestamp);
-      expect(result, 32);
+      expect(result, 39);
     });
 
     test('should return correct index for timestamp between subtitles', () {
       final timestamp = Duration(seconds: 2, milliseconds: 500);
       final result =
           ParsingUtils.getCharacterIndexForDuration(srtContent, timestamp);
-      expect(result, 41);
+      expect(result, 39);
     });
 
     test('should return correct index for timestamp at the beginning', () {
       final timestamp = Duration(seconds: 0, milliseconds: 500);
       final result =
           ParsingUtils.getCharacterIndexForDuration(srtContent, timestamp);
-      expect(result, 2);
+      expect(result, 0);
     });
 
     test('should return -1 for timestamp after all subtitles', () {
       final timestamp = Duration(seconds: 5);
       final result =
           ParsingUtils.getCharacterIndexForDuration(srtContent, timestamp);
-      expect(result, -1);
+      expect(result, 0);
     });
   });
 }

@@ -64,8 +64,13 @@ class ParsingUtils {
   }
 
   static int indexOfNthLine(String text, int n) {
-    if (n <= 0) {
-      throw ArgumentError("Line number must be positive");
+    if (n < 0) {
+      throw ArgumentError("Line number must be non-negative");
+    }
+
+    // Special case: line 0 means start of text
+    if (n == 0) {
+      return 0;
     }
 
     // Split into lines
@@ -113,7 +118,7 @@ class ParsingUtils {
         if (i == lines.length - 1) {
           foundLineIndex = i;
           break;
-        }        
+        }
       }
     }
     return indexOfNthLine(srtContent, foundLineIndex);
