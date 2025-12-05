@@ -58,6 +58,20 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
     }
   }
 
+  RenderEditable? _findRenderEditable(RenderObject? root) {
+    if (root is RenderEditable) {
+      return root;
+    }
+    RenderEditable? renderEditable;
+    root?.visitChildren((child) {
+      renderEditable = _findRenderEditable(child);
+      if (renderEditable != null) {
+        return;
+      }
+    });
+    return renderEditable;
+  }
+
   void _scrollToTimestamp(String content) {
     final duration = ParsingUtils.parseTimestamp(widget.timestamp);
     final characterIndex =
@@ -70,10 +84,12 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
       _textController.selection = selection;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final RenderObject? renderObject =
-            _textFieldKey.currentContext?.findRenderObject();
-        if (renderObject is RenderEditable) {
-          final Rect? caretRect = renderObject.getLocalRectForCaret(selection.base);
+        final renderObject = _textFieldKey.currentContext?.findRenderObject();
+        final renderEditable = _findRenderEditable(renderObject);
+
+        if (renderEditable != null) {
+          final Rect? caretRect =
+              renderEditable.getLocalRectForCaret(selection.base);
           if (caretRect != null) {
             _scrollController.jumpTo(caretRect.top);
           }
