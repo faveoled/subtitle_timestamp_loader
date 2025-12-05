@@ -24,6 +24,8 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
   bool _isLoading = true;
   final OpenSubtitlesApi _api = OpenSubtitlesApi();
   final TextEditingController _textController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _textFieldKey = GlobalKey();
 
   @override
   void initState() {
@@ -34,6 +36,7 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
   @override
   void dispose() {
     _textController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -58,10 +61,32 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
     final duration = ParsingUtils.parseTimestamp(widget.timestamp);
     final characterIndex =
         ParsingUtils.getCharacterIndexForDuration(content, duration);
+
     if (characterIndex != -1) {
       _textController.selection = TextSelection.fromPosition(
         TextPosition(offset: characterIndex),
       );
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final RenderBox? renderBox =
+            _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final width = renderBox.size.width;
+          final textPainter = TextPainter(
+            text: TextSpan(
+              text: _textController.text.substring(0, characterIndex),
+              style: DefaultTextStyle.of(context).style,
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          textPainter.layout(
+            minWidth: 0,
+            maxWidth: width,
+          );
+          final cursorOffset = textPainter.height;
+          _scrollController.jumpTo(cursorOffset);
+        }
+      });
     }
   }
 
@@ -99,7 +124,9 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
+                key: _textFieldKey,
                 controller: _textController,
+                scrollController: _scrollController,
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
               ),
