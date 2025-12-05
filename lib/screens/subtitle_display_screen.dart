@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:subtitle_timestamp_loader/services/opensubtitles_api.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -25,7 +24,6 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
   bool _isLoading = true;
   final OpenSubtitlesApi _api = OpenSubtitlesApi();
   final TextEditingController _textController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
   final GlobalKey _textFieldKey = GlobalKey();
 
   @override
@@ -37,7 +35,6 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -58,41 +55,24 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
     }
   }
 
-  RenderEditable? _findRenderEditable(RenderObject? root) {
-    if (root is RenderEditable) {
-      return root;
-    }
-    RenderEditable? renderEditable;
-    root?.visitChildren((child) {
-      renderEditable = _findRenderEditable(child);
-      if (renderEditable != null) {
-        return;
-      }
-    });
-    return renderEditable;
-  }
-
   void _scrollToTimestamp(String content) {
     final duration = ParsingUtils.parseTimestamp(widget.timestamp);
     final characterIndex =
         ParsingUtils.getCharacterIndexForDuration(content, duration);
 
     if (characterIndex != -1) {
-      final selection = TextSelection.fromPosition(
+      _textController.selection = TextSelection.fromPosition(
         TextPosition(offset: characterIndex),
       );
-      _textController.selection = selection;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final renderObject = _textFieldKey.currentContext?.findRenderObject();
-        final renderEditable = _findRenderEditable(renderObject);
-
-        if (renderEditable != null) {
-          final Rect? caretRect =
-              renderEditable.getLocalRectForCaret(selection.base);
-          if (caretRect != null) {
-            _scrollController.jumpTo(caretRect.top);
-          }
+        final context = _textFieldKey.currentContext;
+        if (context != null) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5, // Center the cursor
+            duration: Duration.zero,
+          );
         }
       });
     }
@@ -134,7 +114,6 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
               child: TextField(
                 key: _textFieldKey,
                 controller: _textController,
-                scrollController: _scrollController,
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
               ),
