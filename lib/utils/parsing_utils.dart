@@ -62,4 +62,61 @@ class ParsingUtils {
     }
     return 'No subtitle found for the given timestamp.';
   }
+
+  static int indexOfNthLine(String text, int n) {
+    if (n <= 0) {
+      throw ArgumentError("Line number must be positive");
+    }
+
+    // Split into lines
+    var lines = text.split('\n');
+
+    if (n > lines.length) {
+      throw RangeError("Line $n does not exist in the text");
+    }
+
+    // Sum lengths of all previous lines + newline characters
+    return lines.take(n - 1)
+                .map((line) => line.length + 1) // +1 for '\n'
+                .fold(0, (sum, len) => sum + len);
+  }
+
+  static int getCharacterIndexForDuration(
+      String srtContent, Duration timestamp) {
+    final lines = srtContent.split('\n');
+    final dateFormat = DateFormat("HH:mm:ss,SSS");
+    int foundLineIndex = 0;
+
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].contains('-->')) {
+        final timeParts = lines[i].split(' --> ');
+        final startTime = dateFormat.parse(timeParts[0].trim(), true);
+        final endTime = dateFormat.parse(timeParts[1].trim(), true);
+        final subtitleStart = Duration(
+          hours: startTime.hour,
+          minutes: startTime.minute,
+          seconds: startTime.second,
+          milliseconds: startTime.millisecond,
+        );
+
+        final subtitleEnd = Duration(
+          hours: endTime.hour,
+          minutes: endTime.minute,
+          seconds: endTime.second,
+          milliseconds: endTime.millisecond,
+        );
+
+        if (subtitleStart >= timestamp) {
+          foundLineIndex = i;
+          break;
+        }
+        if (i == lines.length - 1) {
+          foundLineIndex = i;
+          break;
+        }        
+      }
+    }
+    return indexOfNthLine(srtContent, foundLineIndex);
+  }
+
 }
