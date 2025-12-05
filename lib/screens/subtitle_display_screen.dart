@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:subtitle_timestamp_loader/services/opensubtitles_api.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -63,28 +64,19 @@ class _SubtitleDisplayScreenState extends State<SubtitleDisplayScreen> {
         ParsingUtils.getCharacterIndexForDuration(content, duration);
 
     if (characterIndex != -1) {
-      _textController.selection = TextSelection.fromPosition(
+      final selection = TextSelection.fromPosition(
         TextPosition(offset: characterIndex),
       );
+      _textController.selection = selection;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final RenderBox? renderBox =
-            _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final width = renderBox.size.width;
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: _textController.text.substring(0, characterIndex),
-              style: DefaultTextStyle.of(context).style,
-            ),
-            textDirection: TextDirection.ltr,
-          );
-          textPainter.layout(
-            minWidth: 0,
-            maxWidth: width,
-          );
-          final cursorOffset = textPainter.height;
-          _scrollController.jumpTo(cursorOffset);
+        final RenderObject? renderObject =
+            _textFieldKey.currentContext?.findRenderObject();
+        if (renderObject is RenderEditable) {
+          final Rect? caretRect = renderObject.getLocalRectForCaret(selection.base);
+          if (caretRect != null) {
+            _scrollController.jumpTo(caretRect.top);
+          }
         }
       });
     }
